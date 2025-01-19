@@ -15,7 +15,6 @@ mongoose.connect("mongodb://mongo_db:27017/",{'dbName':'dealershipsDB'});
 
 
 const Reviews = require('./review');
-
 const Dealerships = require('./dealership');
 
 try {
@@ -58,17 +57,36 @@ app.get('/fetchReviews/dealer/:id', async (req, res) => {
 
 // Express route to fetch all dealerships
 app.get('/fetchDealers', async (req, res) => {
-//Write your code here
+  try {
+    const dealer = await Dealerships.find()
+    res.json(dealer)
+  }
+  catch (error) {
+    res.status(500).json({ error: 'Error fetching the dealerships' });
+  }
 });
 
 // Express route to fetch Dealers by a particular state
 app.get('/fetchDealers/:state', async (req, res) => {
-//Write your code here
+  try {
+    const response = await Dealerships.find({ state: res.params.state })
+    res.json(response)
+  }
+  catch (error) {
+    res.status(500).json({ error: 'Error fetching the states' });
+  }
 });
 
 // Express route to fetch dealer by a particular id
 app.get('/fetchDealer/:id', async (req, res) => {
-//Write your code here
+  //Write your code here
+  try {
+    const response = await Dealerships.find({ id: res.params.id })
+    res.json(response)
+  }
+  catch (error) {
+     res.status(500).json({ error: 'Error fetching the dealer' });
+  }
 });
 
 //Express route to insert review
