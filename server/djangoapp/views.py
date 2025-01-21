@@ -91,45 +91,60 @@ def get_cars(request):
     return JsonResponse({"CarModels": cars})
 
 # # Update the `get_dealerships` view to render the index page with
-# a list of dealerships
-def get_dealerships(request):
-    if (state == "ALL"):
-        endpoint = '/fetchDealers'
+#Update the `get_dealerships` render list of dealerships all by default, particular state if state is passed
+import requests
+from django.http import JsonResponse
+
+def get_dealerships(request, state="All"):
+    api_url = "https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchDealers"
+    
+    response = requests.get(api_url)
+    if response.status_code == 200:
+        dealerships = response.json()
+        if state != "All":
+            dealerships = [d for d in dealerships if d['state'] == state]
+        return JsonResponse({"status": 200, "dealers": dealerships})
     else:
-        endpoint = "/fetchDealers/"+state
-    dealerships = get_request(endpoint)
-    return JsonResponse({"status":200,"dealers":dealerships})
+        return JsonResponse({"status": response.status_code, "error": "Failed to fetch dealers from API"})
+
 
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
-def get_dealer_reviews(request,dealer_id):
-    # if dealer id has been provided
-    if(dealer_id):
-        endpoint = "/fetchReviews/dealer/"+str(dealer_id)
-        reviews = get_request(endpoint)
-        for review_detail in reviews:
-            response = analyze_review_sentiments(review_detail['review'])
-            print(response)
-            review_detail['sentiment'] = response['sentiment']
-        return JsonResponse({"status":200,"reviews":reviews})
+def get_dealer_reviews(request, dealer_id):
+    if dealer_id:
+        api_url = f"https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchReviews/dealer/{dealer_id}"
+        try:
+            response = requests.get(api_url)
+            response.raise_for_status()
+            reviews = response.json()
+            for review in reviews:
+                sentiment = analyze_review_sentiments(review['review'])
+                review['sentiment'] = sentiment['sentiment']
+            return JsonResponse({"status": 200, "reviews": reviews})
+        except requests.exceptions.RequestException as e:
+            return JsonResponse({"status": 500, "message": f"Error: {str(e)}"}, status=500)
     else:
-        return JsonResponse({"status":400,"message":"Bad Request"})
+        return JsonResponse({"status": 400, "message": "Bad Request"}, status=400)
 
 # Create a `get_dealer_details` view to render the dealer details
 def get_dealer_details(request, dealer_id):
-    if (dealer_id):
-        endpoint = "/fetchDealer/"+str(dealer_id)
-        dealership = get_request(endpoint)
-        return JsonResponse({"status": 200, "dealer": dealership})
+    if dealer_id:
+        api_url = f"https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchDealer/{dealer_id}"
+        try:
+            response = requests.get(api_url)
+            response.raise_for_status()  # Raises an HTTPError for bad responses
+            dealer_data = response.json()
+            return JsonResponse({"status": 200, "dealer": dealer_data})
+        except requests.exceptions.RequestException as e:
+            return JsonResponse({"status": 500, "message": f"Error: {str(e)}"}, status=500)
     else:
-        return JsonResponse({"status":400,"message":"Bad Request"})
+        return JsonResponse({"status": 400, "message": "Bad Request"}, status=400)
 
-# Create a `add_review` view to submit a review
 def add_review(request):
-    if (request.user.is_anonymous == False):
+    if(request.user.is_anonymous == False):
         data = json.loads(request.body)
         try:
             response = post_review(data)
-            return JsonResponse({"status": 200})
+            return JsonResponse({"status":200})
         except:
             return JsonResponse({"status":401,"message":"Error in posting review"})
     else:

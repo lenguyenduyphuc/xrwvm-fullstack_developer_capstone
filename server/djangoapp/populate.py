@@ -1,4 +1,4 @@
-from .models import CarModel, CarMake
+from .models import CarMake, CarModel
 
 def initiate():
     car_make_data = [
