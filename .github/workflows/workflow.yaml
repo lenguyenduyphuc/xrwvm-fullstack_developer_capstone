@@ -1,0 +1,60 @@
+name: 'Lint Code'
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  lint_python:
+    name: Lint Python Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Run Python Linter
+        run: |
+          # Configure flake8 to ignore specific errors and set max line length
+          flake8 . --max-line-length=120 \
+            --ignore=F401,E302,E231,E501,W291,W292,W293,E275,E722,F841,E402,F811,E251,E203,E712 \
+            --exclude=.git,__pycache__,build,dist
+
+  lint_js:
+    name: Lint JavaScript Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
+      - name: Install JSHint
+        run: npm install jshint --global
+
+      - name: Run JavaScript Linter
+        run: |
+          # Create .jshintrc config file
+          echo '{
+            "esversion": 8,
+            "node": true,
+            "asi": true,
+            "sub": true
+          }' > .jshintrc
+          
+          # Run JSHint with config
+          find ./server/database -name "*.js" -exec jshint {} +
