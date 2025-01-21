@@ -9,10 +9,7 @@ import logging
 import requests
 from .models import CarModel, CarMake
 from .populate import initiate
-
 logger = logging.getLogger(__name__)
-
-from .models import CarModel, CarMake
 from .restapis import get_request, analyze_review_sentiments, post_review
 
 @csrf_exempt
@@ -39,8 +36,6 @@ def logout_request(request):
 # Create a `registration` view to handle sign up request
 @csrf_exempt
 def registration(request):
-    context = {}
-
     data = json.loads(request.body)
     username = data['userName']
     password = data['password']
@@ -107,11 +102,8 @@ def get_dealer_reviews(request, dealer_id):
         # Add some debug logging
         print(f"Fetching reviews for dealer {dealer_id}")
         reviews = get_request(endpoint)
-        
-        # Add error checking for empty reviews
         if not reviews:
             return JsonResponse({"status": 404, "message": "No reviews found"})
-            
         # Add try-catch for sentiment analysis
         for review in reviews:
             try:
@@ -120,7 +112,6 @@ def get_dealer_reviews(request, dealer_id):
             except Exception as e:
                 review['sentiment'] = 'neutral'
                 print(f"Sentiment analysis failed: {str(e)}")
-                
         return JsonResponse({"status": 200, "reviews": reviews})
     except Exception as e:
         print(f"Error fetching reviews: {str(e)}")  # Add debug logging
