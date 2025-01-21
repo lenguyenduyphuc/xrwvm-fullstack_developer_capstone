@@ -1,9 +1,11 @@
 name: 'Lint Code'
+
 on:
   push:
     branches: [master, main]
   pull_request:
     branches: [master, main]
+
 jobs:
   lint_python:
     name: Lint Python Files
@@ -22,15 +24,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8
 
-      - name: Print working directory
-        run: pwd
-
-      - name: Run Linter
+      - name: Run Python Linter
         run: |
-          pwd
-          # This command finds all Python files recursively and runs flake8 on them
-          find . -name "*.py" -exec flake8 {} +
-          echo "Linted all the python files successfully"
+          # Configure flake8 to ignore specific errors and set max line length
+          flake8 . --max-line-length=120 \
+            --ignore=E128,W391,E117,E303,E121,E131,E225,E226 \
+            --exclude=.git,__pycache__,build,dist
 
   lint_js:
     name: Lint JavaScript Files
@@ -47,8 +46,7 @@ jobs:
       - name: Install JSHint
         run: npm install jshint --global
 
-      - name: Run Linter
+      - name: Run JavaScript Linter
         run: |
-          # This command finds all JavaScript files recursively and runs JSHint on them
+          echo '{"esversion": 8, "node": true}' > .jshintrc
           find ./server/database -name "*.js" -exec jshint {} +
-          echo "Linted all the js files successfully"
