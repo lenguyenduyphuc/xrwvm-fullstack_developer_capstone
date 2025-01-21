@@ -2,6 +2,8 @@ from django.http import JsonResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
+
+
 import json
 import logging
 import requests
@@ -9,8 +11,8 @@ from .models import CarModel, CarMake
 from .populate import initiate
 from .restapis import get_request, analyze_review_sentiments, post_review
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def login_user(request):
@@ -149,7 +151,7 @@ def add_review(request):
         try:
             post_review(data)
             return JsonResponse({"status": 200})
-        except Exception as e:
+        except Exception:
             return JsonResponse({
                 "status": 401,
                 "message": "Error in posting review"
