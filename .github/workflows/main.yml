@@ -80,12 +80,6 @@ jobs:
           "sub": true
         }' > .jshintrc
 
-    - name: Add JSHint directive to JS files
-      run: |
-        for file in $(find ./server/database -name "*.js"); do
-          sed -i '1i/*jshint esversion: 8 */' "$file"
-        done
-
     - name: Run JavaScript Linter
       run: |
         find ./server/database -name "*.js" -exec jshint {} +
