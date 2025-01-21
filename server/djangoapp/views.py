@@ -88,10 +88,14 @@ def get_dealerships(request, state="All"):
 
 def get_dealer_details(request, dealer_id):
     if dealer_id:
-        endpoint = f"/fetchDealer/{dealer_id}"
+        endpoint = f"https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchDealer/{dealer_id}"
         try:
-            dealership = get_request(endpoint)
-            return JsonResponse({"status": 200, "dealer": [dealership]})
+            response = requests.get(endpoint)
+            if response.status_code == 200:
+                dealership = response.json()
+                return JsonResponse({"status": 200, "dealer": [dealership]})  # Wrap dealership in a list
+            else:
+                return JsonResponse({"status": response.status_code, "error": "Failed to fetch dealer details"}, status=400)
         except Exception as e:
             return JsonResponse({"status": 500, "error": str(e)}, status=500)
     else:
