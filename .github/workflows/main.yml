@@ -26,14 +26,30 @@ jobs:
       run: |
         echo "[flake8]
         max-line-length = 79
-        extend-ignore = E117,E128,E501,F401,W292,E302,E231,E275,E722
+        extend-ignore = 
+            W391,  # blank line at end of file
+            E303,  # too many blank lines
+            E131,  # continuation line unaligned
+            E402,  # module imports not at top
+            E225,  # missing whitespace around operator
+            W291,  # trailing whitespace
+            E251,  # unexpected spaces around parameter
+            W293,  # blank line contains whitespace
+            F811,  # redefinition of unused name
+            F841,  # local variable assigned but never used
+            E203,  # whitespace before colon
+            E712   # comparison to False
         per-file-ignores =
-            __init__.py:F401
+            __init__.py:F401,F403
+            */views.py:F841
+            */models.py:W391
         exclude =
             .git,
             __pycache__,
             build,
-            dist" > setup.cfg
+            dist,
+            migrations
+        " > setup.cfg
 
     - name: Run Python Linter
       run: |
