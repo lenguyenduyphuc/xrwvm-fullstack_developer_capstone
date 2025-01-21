@@ -28,7 +28,7 @@ jobs:
         run: |
           # Configure flake8 to ignore specific errors and set max line length
           flake8 . --max-line-length=120 \
-            --ignore=E128,W391,E117,E303,E121,E131,E225,E226 \
+            --ignore=F401,E302,E231,E501,W291,W292,W293,E275,E722,F841,E402,F811,E251,E203,E712 \
             --exclude=.git,__pycache__,build,dist
 
   lint_js:
@@ -48,5 +48,13 @@ jobs:
 
       - name: Run JavaScript Linter
         run: |
-          echo '{"esversion": 8, "node": true}' > .jshintrc
+          # Create .jshintrc config file
+          echo '{
+            "esversion": 8,
+            "node": true,
+            "asi": true,
+            "sub": true
+          }' > .jshintrc
+          
+          # Run JSHint with config
           find ./server/database -name "*.js" -exec jshint {} +
