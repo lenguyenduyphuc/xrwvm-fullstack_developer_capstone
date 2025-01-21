@@ -14,6 +14,7 @@ from .restapis import get_request, analyze_review_sentiments, post_review
 
 logger = logging.getLogger(__name__)
 
+
 @csrf_exempt
 def login_user(request):
     data = json.loads(request.body)
