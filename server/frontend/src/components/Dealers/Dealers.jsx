@@ -6,11 +6,12 @@ import review_icon from "../assets/reviewicon.png";
 
 const Dealers = () => {
   const [dealersList, setDealersList] = useState([]);
-  //let [state, setState] = useState("")
+  // let [state, setState] = useState("")
   let [states, setStates] = useState([]);
-  console.log("working");
+
   // let root_url = window.location.origin
-  let dealer_url = "/djangoapp/get_dealers/"; // Add trailing slash
+  let dealer_url = "/djangoapp/get_dealers";
+
   let dealer_url_by_state = "/djangoapp/get_dealers/";
 
   const filterDealers = async (state) => {
@@ -26,30 +27,21 @@ const Dealers = () => {
   };
 
   const get_dealers = async () => {
-    try {
-      const res = await fetch(dealer_url, {
-        method: "GET",
+    const res = await fetch(dealer_url, {
+      method: "GET",
+    });
+    const retobj = await res.json();
+    if (retobj.status === 200) {
+      let all_dealers = Array.from(retobj.dealers);
+      let states = [];
+      all_dealers.forEach((dealer) => {
+        states.push(dealer.state);
       });
-      const retobj = await res.json();
-      console.log("API Response:", retobj); // Add this to debug
 
-      if (retobj && retobj.status === 200 && retobj.dealers) {
-        let all_dealers = Array.from(retobj.dealers);
-        let states = [];
-        all_dealers.forEach((dealer) => {
-          states.push(dealer.state);
-        });
-
-        setStates(Array.from(new Set(states)));
-        setDealersList(all_dealers);
-      } else {
-        console.error("Invalid response format:", retobj);
-      }
-    } catch (error) {
-      console.error("Error fetching dealers:", error);
+      setStates(Array.from(new Set(states)));
+      setDealersList(all_dealers);
     }
   };
-
   useEffect(() => {
     get_dealers();
   }, []);

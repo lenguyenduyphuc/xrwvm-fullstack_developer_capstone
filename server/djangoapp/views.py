@@ -1,30 +1,20 @@
-# Uncomment the required imports before adding the code
-
-from django.shortcuts import render
-from django.http import HttpResponseRedirect, HttpResponse
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib.auth import logout
-from django.contrib import messages
-from datetime import datetime
-
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from django.contrib.auth import login, authenticate
-import logging
-import json
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+import json
+import logging
+import requests
+from .models import CarModel, CarMake
 from .populate import initiate
+
+logger = logging.getLogger(__name__)
 
 from .models import CarModel, CarMake
 from .restapis import get_request, analyze_review_sentiments, post_review
 
-# Get an instance of a logger
-logger = logging.getLogger(__name__)
-
-
-# Create your views here.
-
-# Create a `login_request` view to handle sign in request
 @csrf_exempt
 def login_user(request):
     # Get username and password from request.POST dictionary
@@ -80,64 +70,57 @@ def registration(request):
         return JsonResponse(data)
 
 def get_cars(request):
-    count = CarMake.objects.filter().count()
-    print(count)
-    if (count == 0):
+    if CarMake.objects.count() == 0:
         initiate()
     car_models = CarModel.objects.select_related('car_make')
-    cars = []
-    for car_model in car_models:
-        cars.append({"CarModel": car_model.name, "CarMake": car_model.car_make.name})
+    cars = [{"CarModel": car.name, "CarMake": car.car_make.name} for car in car_models]
     return JsonResponse({"CarModels": cars})
 
-# # Update the `get_dealerships` view to render the index page with
-#Update the `get_dealerships` render list of dealerships all by default, particular state if state is passed
-import requests
-from django.http import JsonResponse
-
 def get_dealerships(request, state="All"):
-    api_url = "https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchDealers"
-    
-    response = requests.get(api_url)
-    if response.status_code == 200:
-        dealerships = response.json()
+    endpoint = "/fetchDealers"
+    try:
+        dealerships = get_request(endpoint)
         if state != "All":
             dealerships = [d for d in dealerships if d['state'] == state]
         return JsonResponse({"status": 200, "dealers": dealerships})
-    else:
-        return JsonResponse({"status": response.status_code, "error": "Failed to fetch dealers from API"})
+    except Exception as e:
+        return JsonResponse({"status": 500, "error": str(e)}, status=500)
 
-
-# Create a `get_dealer_reviews` view to render the reviews of a dealer
-def get_dealer_reviews(request, dealer_id):
-    if dealer_id:
-        api_url = f"https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchReviews/dealer/{dealer_id}"
-        try:
-            response = requests.get(api_url)
-            response.raise_for_status()
-            reviews = response.json()
-            for review in reviews:
-                sentiment = analyze_review_sentiments(review['review'])
-                review['sentiment'] = sentiment['sentiment']
-            return JsonResponse({"status": 200, "reviews": reviews})
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({"status": 500, "message": f"Error: {str(e)}"}, status=500)
-    else:
-        return JsonResponse({"status": 400, "message": "Bad Request"}, status=400)
-
-# Create a `get_dealer_details` view to render the dealer details
 def get_dealer_details(request, dealer_id):
     if dealer_id:
-        api_url = f"https://duyphuclengu-3030.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/fetchDealer/{dealer_id}"
+        endpoint = f"/fetchDealer/{dealer_id}"
         try:
-            response = requests.get(api_url)
-            response.raise_for_status()  # Raises an HTTPError for bad responses
-            dealer_data = response.json()
-            return JsonResponse({"status": 200, "dealer": dealer_data})
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({"status": 500, "message": f"Error: {str(e)}"}, status=500)
+            dealership = get_request(endpoint)
+            return JsonResponse({"status": 200, "dealer": [dealership]})
+        except Exception as e:
+            return JsonResponse({"status": 500, "error": str(e)}, status=500)
     else:
         return JsonResponse({"status": 400, "message": "Bad Request"}, status=400)
+
+def get_dealer_reviews(request, dealer_id):
+    endpoint = f"/fetchReviews/dealer/{dealer_id}"
+    try:
+        # Add some debug logging
+        print(f"Fetching reviews for dealer {dealer_id}")
+        reviews = get_request(endpoint)
+        
+        # Add error checking for empty reviews
+        if not reviews:
+            return JsonResponse({"status": 404, "message": "No reviews found"})
+            
+        # Add try-catch for sentiment analysis
+        for review in reviews:
+            try:
+                sentiment = analyze_review_sentiments(review['review'])
+                review['sentiment'] = sentiment['sentiment']
+            except Exception as e:
+                review['sentiment'] = 'neutral'
+                print(f"Sentiment analysis failed: {str(e)}")
+                
+        return JsonResponse({"status": 200, "reviews": reviews})
+    except Exception as e:
+        print(f"Error fetching reviews: {str(e)}")  # Add debug logging
+        return JsonResponse({"status": 500, "error": str(e)}, status=500)
 
 def add_review(request):
     if(request.user.is_anonymous == False):
